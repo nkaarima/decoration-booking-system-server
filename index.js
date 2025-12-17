@@ -30,10 +30,17 @@ try{
         app.post('/service', async (req,res) => {
      
            const serviceData=req.body;
-           console.log(serviceData);
+           //console.log(serviceData);
            const result= await servicesCollection.insertOne(serviceData);
            res.send(result);
+        })
 
+        // Retrieve decoration service and display it in client side
+
+        app.get('/services-top-3', async (req,res) => {
+       
+            const result= await servicesCollection.find().limit(3).toArray();
+            res.send(result);
 
         })
 
