@@ -3,7 +3,7 @@ require('dotenv').config()
 const express= require('express');
 const cors= require('cors');
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const app = express();
 const port=process.env.PORT || 3000;
 
@@ -78,6 +78,15 @@ try{
                  const result= await usersCollection.insertOne(userInfo);
                  res.send(result);
 
+        })
+
+        //Create plant detail
+
+        app.get('/plant-detail/:id', async (req,res) => {
+
+          const id= req.params.id;
+          const result = await servicesCollection.findOne( {_id: new ObjectId(id)} );
+          res.send(result);
         })
 
 
