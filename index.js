@@ -24,6 +24,7 @@ try{
 
         const db= client.db('decorDb');
         const servicesCollection=db.collection('services');
+        const usersCollection=db.collection('users');
 
         //Create decoration service
 
@@ -41,6 +42,41 @@ try{
        
             const result= await servicesCollection.find().limit(3).toArray();
             res.send(result);
+
+        })
+
+
+        //Save or update users
+
+        app.post('/user', async (req,res) => {
+    
+            const userInfo= req.body;
+            console.log(userInfo);
+
+            const query= {email: userInfo.email};
+
+            userInfo.created= new Date().toISOString();
+            userInfo.last_loggedin = new Date().toISOString();
+
+            userInfo.role="customer";
+
+            const userExists= await usersCollection.findOne(query);
+
+            if(userExists){
+         
+               const result = await usersCollection.updateOne(query, {
+
+                 $set: {
+                  last_loggedin: new Date().toISOString()
+                 }
+               })
+
+               return res.send(result);
+            
+              }
+       
+                 const result= await usersCollection.insertOne(userInfo);
+                 res.send(result);
 
         })
 
