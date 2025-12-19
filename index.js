@@ -80,13 +80,37 @@ try{
 
         })
 
-        //Create plant detail
+        //Get a user's role
 
-        app.get('/plant-detail/:id', async (req,res) => {
+        app.get('/user/role/:email', async (req,res) => {
+       
+           const email= req.params.email;
+
+           const result= await usersCollection.findOne({email});
+           res.send({role: result?.role});
+
+        })
+
+
+
+        //Create service detail
+
+        app.get('/service-details/:id', async (req,res) => {
 
           const id= req.params.id;
           const result = await servicesCollection.findOne( {_id: new ObjectId(id)} );
           res.send(result);
+        })
+
+        //Get a user's role
+
+        app.get('/user/role/:email', async (req,res) => {
+
+          const email= req.params.email;
+          const result= await usersCollection.findOne({email});
+          res.send({role: result?.role});
+
+
         })
 
 
