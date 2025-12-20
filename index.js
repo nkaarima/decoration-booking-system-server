@@ -25,6 +25,7 @@ try{
         const db= client.db('decorDb');
         const servicesCollection=db.collection('services');
         const usersCollection=db.collection('users');
+        const bookingsCollection= db.collection('bookings');
 
         //Create decoration service
 
@@ -42,6 +43,13 @@ try{
        
             const result= await servicesCollection.find().limit(3).toArray();
             res.send(result);
+
+        })
+
+        app.get('/all-services', async (req, res) => {
+      
+           const result = await servicesCollection.find().toArray();
+           res.send(result);
 
         })
 
@@ -110,6 +118,25 @@ try{
           const result= await usersCollection.findOne({email});
           res.send({role: result?.role});
 
+
+        })
+
+        //Book decoration service
+
+        app.post('/my-bookings', async (req,res) => {
+          
+          const bookingInfo= req.body;
+          const decorationServiceId=bookingInfo.decorationServiceId; 
+
+           const requestExist= await bookingsCollection.findOne({decorationServiceId});
+          
+           if(requestExist)
+          {
+            return res.status(409).send({message:'Already booked,please wait'});
+          }
+          
+          const result= await bookingsCollection.insertOne(bookingInfo);
+          res.send(result);
 
         })
 
