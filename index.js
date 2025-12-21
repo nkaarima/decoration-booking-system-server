@@ -1,9 +1,9 @@
 require('dotenv').config()
-
 const express= require('express');
 const cors= require('cors');
 
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
+const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const app = express();
 const port=process.env.PORT || 3000;
 
@@ -26,6 +26,7 @@ try{
         const servicesCollection=db.collection('services');
         const usersCollection=db.collection('users');
         const bookingsCollection= db.collection('bookings');
+        const paymentCollection= db.collection('payment')
 
         //Create decoration service
 
@@ -150,7 +151,106 @@ try{
 
         })
 
-        //
+        // Payment api
+
+        app.post('/create-checkout-session', async (req,res) => {
+            
+            const paymentInfo = req.body;
+            //console.log(paymentInfo);
+          
+            const session= await stripe.checkout.sessions.create({
+             
+              line_items:[
+                 
+                     {
+                        price_data: {
+                                currency:'usd',
+                                product_data: {
+                               
+                                     name:paymentInfo?.serviceName
+                                   
+                                       
+                                     },
+
+                                     unit_amount: paymentInfo?.decorationCost * 100
+                           
+                              },
+
+                              quantity:1
+                     }
+
+
+
+                  ],
+
+                  customer_email:paymentInfo?.customer?.email,
+
+                  mode:'payment',
+                  metadata: {
+
+                     decorationId: paymentInfo?.decorationServiceId,
+                     customer:paymentInfo?.customer?.email
+                  },
+
+                  success_url:'http://localhost:5173/payment-sucess?session_id={CHECKOUT_SESSION_ID}',
+                  cancel_url:`http://localhost:5173/service-details/${paymentInfo.decorationServiceId}`
+
+     
+
+
+            })
+
+            res.send({url:session.url})
+
+            
+        })
+
+        //payment-success
+
+        app.post('/payment-success', async (req,res) => {
+            
+           const {sessionId} =req.body;
+           const session= await stripe.checkout.sessions.retrieve(sessionId);
+           //console.log(session);
+
+           const services= await servicesCollection.findOne({_id: new ObjectId(session.metadata.decorationId)})
+
+           const bookedData= await paymentCollection.findOne({transactionId:session.payment_intent })
+
+
+           if(session.status === 'complete' && services && !bookedData)
+           {
+              const paymentDoneData= {
+           
+             decorationServiceId: session.metadata.decorationId,
+             transactionId:session.payment_intent,
+             customer:session.metadata.customer,
+             status:'pending',
+             name:services.serviceName,
+             category:services.serviceCategory,
+             price:session.amount_total /100
+       
+             }
+             
+             const result= await paymentCollection.insertOne(paymentDoneData);
+
+             return res.send({
+                  transactionId:session.payment_intent,
+                  paymentId: result.insertedId
+             })
+             
+           }
+       
+            else{
+                res.send({
+                  transactionId:session.payment_intent
+            })
+
+
+
+        }
+
+      })
 
 
         await client.db("admin").command({ ping: 1 });
