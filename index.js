@@ -252,6 +252,16 @@ try{
 
       })
 
+      //retrieve payment-info
+
+      app.get('/payment-info/:email', async (req,res) => {
+       
+         const email = req.params.email;
+         const result= await paymentCollection.find({customer:email}).toArray();
+         res.send(result);
+         
+      })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
