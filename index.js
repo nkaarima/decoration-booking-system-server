@@ -271,6 +271,33 @@ try{
           res.send(result);
       })
 
+      //Edit service
+
+      app.put('/edit-service/:id', async (req,res) => {
+         
+          const id = req.params.id;
+          const updatedData= req.body;
+          console.log(updatedData);
+          const query= {_id: new ObjectId(id)}
+       
+           const update= {
+             
+             $set:{
+                
+               name:updatedData.serviceName,
+               category:updatedData.serviceCategory,
+               cost:updatedData.price,
+               unit:updatedData.unit
+               
+             }
+
+           }
+
+
+          const result = await servicesCollection.updateOne(query,update)
+          res.send(result);
+      })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
