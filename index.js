@@ -26,7 +26,8 @@ try{
         const servicesCollection=db.collection('services');
         const usersCollection=db.collection('users');
         const bookingsCollection= db.collection('bookings');
-        const paymentCollection= db.collection('payment')
+        const paymentCollection= db.collection('payment');
+        const decoratorsCollection=db.collection('decorators');
 
         //Create decoration service
 
@@ -309,9 +310,20 @@ try{
 
       })
 
+      //Create decorators
+
+      app.post('/create-decorator', async (req,res) => {
+         
+         const decoratorInfo = req.body;
+         const result= await decoratorsCollection.insertOne(decoratorInfo);
+         res.send(result);
+      })
+
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
+
+    //Save decorator Info
 
 
 } finally {
