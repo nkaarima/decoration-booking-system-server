@@ -190,7 +190,10 @@ try{
                   metadata: {
 
                      decorationId: paymentInfo?.decorationServiceId,
-                     customer:paymentInfo?.customer?.email
+                     customer_email:paymentInfo?.customer?.email,
+                     customer_name:paymentInfo?.customer?.name,
+                     location:paymentInfo?.location,
+                     serviceDate:paymentInfo?.serviceDate
                   },
 
                   success_url:'http://localhost:5173/payment-sucess?session_id={CHECKOUT_SESSION_ID}',
@@ -215,7 +218,18 @@ try{
            //console.log(session);
 
            const services= await servicesCollection.findOne({_id: new ObjectId(session.metadata.decorationId)})
+           
+           const paymentStatus= await bookingsCollection.updateOne(
 
+            {decorationServiceId:session.metadata.decorationId},{
+
+               $set: {
+                isPaid:true
+               }
+            }
+
+
+           )
            const bookedData= await paymentCollection.findOne({transactionId:session.payment_intent })
 
 
@@ -225,12 +239,16 @@ try{
            
              decorationServiceId: session.metadata.decorationId,
              transactionId:session.payment_intent,
-             customer:session.metadata.customer,
-             status:'pending',
+             customer_name:session.metadata.customer_name,
+             customer_email:session.metadata.customer_email,
+             location:session.metadata.location,
+             serviceDate:session.metadata.serviceDate,
+
              name:services.serviceName,
              category:services.serviceCategory,
-             price:session.amount_total /100
-       
+             price:session.amount_total /100,
+             
+     
              }
              
              const result= await paymentCollection.insertOne(paymentDoneData);
@@ -248,7 +266,6 @@ try{
             })
 
 
-
         }
 
       })
@@ -258,7 +275,7 @@ try{
       app.get('/payment-info/:email', async (req,res) => {
        
          const email = req.params.email;
-         const result= await paymentCollection.find({customer:email}).toArray();
+         const result= await paymentCollection.find({customer_email:email}).toArray();
          res.send(result);
          
       })
@@ -318,6 +335,19 @@ try{
          const result= await decoratorsCollection.insertOne(decoratorInfo);
          res.send(result);
       })
+
+      //Get users who have paid
+
+      app.get('/all-payment-info', async (req,res) => {
+
+        const result= await paymentCollection.find().toArray();
+        res.send(result);
+      })
+
+     
+
+
+
 
 
         await client.db("admin").command({ ping: 1 });
