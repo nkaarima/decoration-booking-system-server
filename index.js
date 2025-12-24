@@ -366,12 +366,42 @@ try{
       app.post('/projects', async (req,res) => {
       
          const projectInfo = req.body;
+         const bookingInfo= await projectsCollection.findOne({bookingId: projectInfo.bookingId});
+         if(bookingInfo)
+         {
+            const result = await projectsCollection.updateOne({bookingId:bookingInfo.bookingId},{
+
+               $set: {
+                 decoratorName:projectInfo.decoratorName
+               }
+            } )
+
+            return res.send(result);
+
+         }
          const result = await projectsCollection.insertOne(projectInfo);
          res.send(result);
 
           
       })
 
+      //Approve or disable decorator accounts
+          
+       app.put('/manage-decorator-account/:email', async (req,res) => {
+
+         const email= req.params.email;
+
+          const accountInfo = req.body;
+         
+          const result = await decoratorsCollection.updateOne({email}, {
+             $set: {
+                
+                accountStatus:accountInfo.status
+             }
+          })
+
+          res.send(result);
+       })
 
 
 
