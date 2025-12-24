@@ -28,6 +28,7 @@ try{
         const bookingsCollection= db.collection('bookings');
         const paymentCollection= db.collection('payment');
         const decoratorsCollection=db.collection('decorators');
+        const projectsCollection= db.collection('projects');
 
         //Create decoration service
 
@@ -139,6 +140,14 @@ try{
           
           const result= await bookingsCollection.insertOne(bookingInfo);
           res.send(result);
+
+        })
+
+        app.get('/all-bookings', async (req,res) => {
+       
+          const result = await bookingsCollection.find({isPaid:true}).toArray();
+          res.send(result);
+ 
 
         })
 
@@ -302,8 +311,8 @@ try{
              
              $set:{
                 
-               name:updatedData.serviceName,
-               category:updatedData.serviceCategory,
+               serviceName:updatedData.serviceName,
+               serviceCategory:updatedData.serviceCategory,
                cost:updatedData.price,
                unit:updatedData.unit
                
@@ -312,7 +321,7 @@ try{
            }
 
 
-          const result = await servicesCollection.updateOne(query,update)
+          const result = await servicesCollection.updateMany(query,update)
           res.send(result);
       })
 
@@ -344,7 +353,24 @@ try{
         res.send(result);
       })
 
-     
+      // Get all decorators info
+
+       app.get('/all-decorators', async (req,res) => {
+         
+         const result= await decoratorsCollection.find().toArray();
+         res.send(result);
+      })
+
+      //Assign decorators to users who have paid
+
+      app.post('/projects', async (req,res) => {
+      
+         const projectInfo = req.body;
+         const result = await projectsCollection.insertOne(projectInfo);
+         res.send(result);
+
+          
+      })
 
 
 
