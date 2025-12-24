@@ -69,9 +69,12 @@ try{
             userInfo.created= new Date().toISOString();
             userInfo.last_loggedin = new Date().toISOString();
 
-            userInfo.role="customer";
-
             const userExists= await usersCollection.findOne(query);
+          
+            //Check if the user is in decorationCollection
+
+            const decorator= await decoratorsCollection.findOne(query);
+            
 
             if(userExists){
          
@@ -85,9 +88,25 @@ try{
                return res.send(result);
             
               }
-       
+
+              else if(decorator)
+              {
+                 if(decorator.accountStatus === 'approved'){
+                 userInfo.role='decorator';
                  const result= await usersCollection.insertOne(userInfo);
-                 res.send(result);
+                 return res.send(result);
+
+                 }
+
+                 else{
+                  return res.send(409).send({message:'Your account needs to be apporved'});
+                 }
+              
+              }
+
+                 userInfo.role="customer";
+                 const result= await usersCollection.insertOne(userInfo);
+                 res.send(result);      
 
         })
 
@@ -111,17 +130,6 @@ try{
           const id= req.params.id;
           const result = await servicesCollection.findOne( {_id: new ObjectId(id)} );
           res.send(result);
-        })
-
-        //Get a user's role
-
-        app.get('/user/role/:email', async (req,res) => {
-
-          const email= req.params.email;
-          const result= await usersCollection.findOne({email});
-          res.send({role: result?.role});
-
-
         })
 
         //Book decoration service
