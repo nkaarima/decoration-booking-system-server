@@ -486,6 +486,26 @@ try{
 
        })
 
+       app.get('/todayProject/:email', async(req,res) => {
+         
+          const email = req.params.email;
+          const todayDate = new Date().toLocaleDateString('en-gb');
+          console.log(todayDate);
+          const result= await projectsCollection.find({email}).toArray();
+
+          const todayProjects= result.filter(project => 
+                 new Date(result.serviceDate).toLocaleDateString('en-gb') === todayDate)
+         
+            return res.send(todayProjects);
+         
+       })
+
+       app.get('/topDecorators' ,async (req,res) => {
+          
+          const result= await decoratorsCollection.find().sort({length:1}).limit(3).toArray()
+          res.send(result);
+       })
+
 
 
 
