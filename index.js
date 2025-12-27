@@ -1,13 +1,13 @@
 require('dotenv').config()
 const express= require('express');
 const cors= require('cors');
-
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-const app = express();
 const port=process.env.PORT || 3000;
+const app = express();
 
 app.use(cors());
+
 app.use(express.json());
 
 const client = new MongoClient(process.env.MONGODB_URL, {
@@ -65,9 +65,10 @@ try{
             console.log(userInfo);
 
             const query= {email: userInfo.email};
+            const currentDate= new Date().toISOString();
 
-            userInfo.created= new Date().toISOString();
-            userInfo.last_loggedin = new Date().toISOString();
+            userInfo.created= currentDate;
+            userInfo.last_loggedin = currentDate;
 
             const userExists= await usersCollection.findOne(query);
           
@@ -77,7 +78,27 @@ try{
             
 
             if(userExists){
-         
+
+               if(userExists.role === 'decorator')
+
+                  {
+                     if(!decorator)
+                     {
+                        return res.status(404).send({message: 'Profile not found'})
+                     }
+
+                     if(decorator.accountStatus === 'pending')
+                     {
+                        return res.status(403).send({message: 'Your account approval is pending'})
+                     }
+
+                     if(decorator.accountStatus === 'disenabled')
+                     {
+                        return res.status(403).send({message: 'Your account  is disabled'})
+                     }
+                  }
+                  
+
                const result = await usersCollection.updateOne(query, {
 
                  $set: {
@@ -89,19 +110,17 @@ try{
             
               }
 
-              else if(decorator)
+              if(decorator)
               {
-                 if(decorator.accountStatus === 'approved'){
+                 if(decorator.accountStatus !== 'approved')
+                  {
+                    return res.status(403).send({message:'Your account needs to be approved'});
+
+                 }
+                
                  userInfo.role='decorator';
                  const result= await usersCollection.insertOne(userInfo);
-                 return res.send(result);
-
-                 }
-
-                 else{
-                  return res.send(409).send({message:'Your account needs to be apporved'});
-                 }
-              
+                 return res.send(result);            
               }
 
                  userInfo.role="customer";
@@ -121,6 +140,15 @@ try{
 
         })
 
+        //Get only customers
+
+        app.get('/all-customers', async (req,res) => {
+        
+           const result= await usersCollection.find({role:'customer'}).toArray();
+           res.send(result);
+
+        })
+
 
 
         //Create service detail
@@ -134,12 +162,13 @@ try{
 
         //Book decoration service
 
-        app.post('/my-bookings', async (req,res) => {
+        app.post('/my-bookings/:email', async (req,res) => {
           
           const bookingInfo= req.body;
+          const email = req.params.email;
           const decorationServiceId=bookingInfo.decorationServiceId; 
 
-           const requestExist= await bookingsCollection.findOne({decorationServiceId});
+          const requestExist= await bookingsCollection.findOne({email,decorationServiceId});
           
            if(requestExist)
           {
@@ -151,19 +180,23 @@ try{
 
         })
 
+         //Retrieve booking service of those who have paid
+
         app.get('/all-bookings', async (req,res) => {
        
-          const result = await bookingsCollection.find({isPaid:true}).toArray();
+          const result = await bookingsCollection.find().toArray();
           res.send(result);
  
 
         })
+
 
         //Retrieve booking service
 
         app.get('/my-bookings/:email', async (req,res) => {
     
            const email= req.params.email;
+           console.log(email);
            const result= await bookingsCollection.find({'customer.email':email}).toArray();
            res.send(result);
 
@@ -206,6 +239,7 @@ try{
                   mode:'payment',
                   metadata: {
 
+                     bookingId:paymentInfo?._id,
                      decorationId: paymentInfo?.decorationServiceId,
                      customer_email:paymentInfo?.customer?.email,
                      customer_name:paymentInfo?.customer?.name,
@@ -213,8 +247,8 @@ try{
                      serviceDate:paymentInfo?.serviceDate
                   },
 
-                  success_url:'http://localhost:5173/payment-sucess?session_id={CHECKOUT_SESSION_ID}',
-                  cancel_url:`http://localhost:5173/service-details/${paymentInfo.decorationServiceId}`
+                  success_url:`${process.env.CLIENT_DOMAIN}/dashboard/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+                  cancel_url:`${process.env.CLIENT_DOMAIN}/service-details/${paymentInfo.decorationServiceId}`
 
      
 
@@ -235,25 +269,25 @@ try{
            //console.log(session);
 
            const services= await servicesCollection.findOne({_id: new ObjectId(session.metadata.decorationId)})
-           
+         
+           const bookedData= await paymentCollection.findOne({transactionId:session.payment_intent })
+
+
+           if(session.payment_status === 'paid' && services && !bookedData)
+           {
+
+              
            const paymentStatus= await bookingsCollection.updateOne(
 
-            {decorationServiceId:session.metadata.decorationId},{
+            {_id:new ObjectId(session.metadata.bookingId)},{
 
                $set: {
                 isPaid:true
                }
-            }
-
-
-           )
-           const bookedData= await paymentCollection.findOne({transactionId:session.payment_intent })
-
-
-           if(session.status === 'complete' && services && !bookedData)
-           {
+            })
               const paymentDoneData= {
            
+             bookingId: session.metadata.bookingId,
              decorationServiceId: session.metadata.decorationId,
              transactionId:session.payment_intent,
              customer_name:session.metadata.customer_name,
@@ -409,6 +443,24 @@ try{
           })
 
           res.send(result);
+       })
+
+       //update user role
+
+       app.put('/make-user-decorator', async (req,res) => {
+
+        const roleInfo=req.body;
+        const result= await usersCollection.updateOne({email:roleInfo.email}, {
+         
+            $set:
+            {
+               role:roleInfo.role
+            }
+    
+        })
+
+        res.send(result);
+
        })
 
 
