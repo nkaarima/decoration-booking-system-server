@@ -427,6 +427,29 @@ try{
           
       })
 
+      app.put('/project-status', async (req,res) => {
+          const statusInfo= req.body;
+          const result = await projectsCollection.updateOne({_id: new ObjectId(statusInfo._id)}, {
+           $set: {
+         
+             projectStatus: statusInfo.status
+           }
+             
+          })
+
+          res.send(result);
+      })
+
+      //Fetch the projects of a decorator
+
+      app.get('/my-projects/:email', async (req,res) => {
+          
+          const email = req.params.email;
+          const projects= await projectsCollection.find().toArray();
+          res.send(projects);
+
+      })
+
       //Approve or disable decorator accounts
           
        app.put('/manage-decorator-account/:email', async (req,res) => {
