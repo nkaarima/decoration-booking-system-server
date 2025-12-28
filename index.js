@@ -62,7 +62,7 @@ try{
         app.post('/user', async (req,res) => {
     
             const userInfo= req.body;
-            console.log(userInfo);
+            //console.log(userInfo);
 
             const query= {email: userInfo.email};
             const currentDate= new Date().toISOString();
@@ -196,7 +196,7 @@ try{
         app.get('/my-bookings/:email', async (req,res) => {
     
            const email= req.params.email;
-           console.log(email);
+           //console.log(email);
            const result= await bookingsCollection.find({'customer.email':email}).toArray();
            res.send(result);
 
@@ -346,7 +346,7 @@ try{
          
           const id = req.params.id;
           const updatedData= req.body;
-          console.log(updatedData);
+          //console.log(updatedData);
           const query= {_id: new ObjectId(id)}
        
            const update= {
@@ -490,7 +490,7 @@ try{
          
           const email = req.params.email;
           const todayDate = new Date().toLocaleDateString('en-gb');
-          console.log(todayDate);
+          //console.log(todayDate);
           const result= await projectsCollection.find({email}).toArray();
 
           const todayProjects= result.filter(project => 
@@ -509,7 +509,7 @@ try{
 
 
 
-        await client.db("admin").command({ ping: 1 });
+        //await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
 
     //Save decorator Info
